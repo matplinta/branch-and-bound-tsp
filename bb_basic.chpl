@@ -2,14 +2,24 @@ use Time;
 use IO;
 use Math;
 use List;
-
+use Random;
 
 // config const N = 280; 
 config const N = 4; 
 config const TASKS = 3;
-var globalMin: real = 99999999999;
-var globalMinPath: list(int);
+
+var timer: Timer;
+// var localMin: real = 99999999999;
+// var localMinPath: list(int);
 // here.maxTaskPar;
+
+proc random(min: int, max: int): int{
+    var rands: [1..1] real;
+    fillRandom(rands);
+    var rand = 1 + rands[1] * N;
+    var ret = rand: int;
+    return ret;
+}
 
 proc euclidean_distance((x1, y1): 2*int, (x2, y2): 2* int): real {
     var xDistance = abs(x1 - x2);
@@ -39,103 +49,66 @@ proc tsplib_reader(path: string, n: int) : []real {
     return adj;
 }
 
-
-// var adj = tsplib_reader("data/a280.tsp", N);
-var adj: [1..N, 1..N] real;
-adj(1,2) = 35;
-adj(2,1) = 35;
-adj(1,3) = 25;
-adj(3,1) = 25;
-adj(1,4) = 10;
-adj(4,1) = 10;
-adj(2,3) = 30;
-adj(3,2) = 30;
-adj(2,4) = 15;
-adj(4,2) = 15;
-adj(3,4) = 20;
-adj(4,3) = 20;
-
-// proc branches(root: int, nodes: []int, adj: []real): []int {
-//     var visited: [1..N] bool;
-//     visited(root) = true;
-//     // var currentPath = List.init();
-//     var globalMin = 99999999999;
-//     // for i in nodes {
-
-//     // }
-
-// }
-
-// proc branch_rec(adj: []real, rootWeight: real, currWeight: real, level: int, currPath: [] int, visited: []bool) {
-
-//     if (level == N) {
-//         localMin = currWeight + adj(currPath[level - 1], currPath[0]);
-
-//         if (localMin < globalMin) {
-//             globalMin = localMin;
-//         }
-
-//         return localMin;
-//     }  
-
-//     for (i in 1..N) {
-//         if (visited(i) == false) {
-//             var temp = rootWeight;
-//             currWeight += adj(currPath[level - 1], i);   
-//         }
-
-//         if (currWeight < globalMin){
-//             currPath[level] = i;
-//             visited[i] = true;
-
-//             branch_rec(adj, rootWeight, currWeight, level + 1, currPath);
-//         }
-//     }
-// }
-
-
-proc tree_branch(in distance: real, adj: []real, in path ) {
+proc tree_branch(in distance: real, adj: []real, in path , inout localMin: real, inout localMinPath) {
 
     if (path.size == N) {
         distance += adj(path[path.size], path[1]);
-
-        
-
-        if (distance < globalMin) {
+        if (distance < localMin) {
             path.append(path[1]);
-            globalMin = distance;
-            globalMinPath = path;
+            localMin = distance;
+            localMinPath = path;
         }
         return;
     }  
 
     for i in 1..N {
-        
         if (path.contains(i)) {
             continue;
         }
-        // writeln("level: ", level, " dist: ", distance, " path ", path);
         var newDistance = distance + adj(path[path.size], i);
 
-        if (newDistance < globalMin) {
+        if (newDistance < localMin) {
             path.append(i);
-
-            tree_branch(newDistance, adj, path);
+            tree_branch(newDistance, adj, path, localMin, localMinPath);
             path.pop();
         } 
     }
 }
 
+proc main() {
 
+    // var adj = tsplib_reader("data/a280.tsp", N);
+    var adj: [1..N, 1..N] real;
+    adj(1,2) = 35;adj(2,1) = 35;adj(1,3) = 25;adj(3,1) = 25;adj(1,4) = 10;adj(4,1) = 10;adj(2,3) = 30;adj(3,2) = 30;
+    adj(2,4) = 15;adj(4,2) = 15;adj(3,4) = 20;adj(4,3) = 20;
 
-var distance: real;
-// var level = 1;
-var path: list(int);
-path.append(4);
-path.append(2);
-distance = 15.0;
+    var root = random(1,N);
+    writeln("root node:\t", root);
+    
+    var minArray: [1..N] real;
+    var minPathArray: [1..N] list(int);
+    minArray[root] = 99999999999;
 
-tree_branch(distance, adj, path);
+    coforall node in 1..N {
+        if node != root {
+            var path: list(int);
+            var distance = adj(root, node): real;
 
-writeln("global best path:\t", globalMinPath);
-writeln("global min distance:\t", globalMin);
+            path.append(root);
+            path.append(node);
+
+            var localMin: real = 99999999999;
+            var localMinPath: list(int);
+
+            tree_branch(distance, adj, path, localMin, localMinPath);
+
+            minArray[node] = localMin;
+            minPathArray[node] = localMinPath;
+            
+        }
+    }
+    var (minVal, minLoc) = minloc reduce zip(minArray, minArray.domain);
+    writeln("global best path:\t", minPathArray[minLoc]);
+    writeln("global min distance:\t", minVal);
+}
+
