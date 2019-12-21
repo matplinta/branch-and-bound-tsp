@@ -5,8 +5,8 @@ use List;
 use Random;
 
 // config const N = 280; 
-config const N = 4; 
-config const TASKS = 3;
+config const N = 280; 
+config const file = "data/a280.tsp"; 
 
 var timer: Timer;
 // var localMin: real = 99999999999;
@@ -77,18 +77,20 @@ proc tree_branch(in distance: real, adj: []real, in path , inout localMin: real,
 
 proc main() {
 
-    // var adj = tsplib_reader("data/a280.tsp", N);
-    var adj: [1..N, 1..N] real;
-    adj(1,2) = 35;adj(2,1) = 35;adj(1,3) = 25;adj(3,1) = 25;adj(1,4) = 10;adj(4,1) = 10;adj(2,3) = 30;adj(3,2) = 30;
-    adj(2,4) = 15;adj(4,2) = 15;adj(3,4) = 20;adj(4,3) = 20;
+    var adj = tsplib_reader(file, N);
+    // var adj: [1..N, 1..N] real;
+    // adj(1,2) = 35;adj(2,1) = 35;adj(1,3) = 25;adj(3,1) = 25;adj(1,4) = 10;adj(4,1) = 10;adj(2,3) = 30;adj(3,2) = 30;
+    // adj(2,4) = 15;adj(4,2) = 15;adj(3,4) = 20;adj(4,3) = 20;
 
     var root = random(1,N);
-    writeln("root node:\t", root);
+    writeln("root node:\t\t", root);
     
     var minArray: [1..N] real;
     var minPathArray: [1..N] list(int);
     minArray[root] = 99999999999;
 
+    timer.start();
+    
     coforall node in 1..N {
         if node != root {
             var path: list(int);
@@ -107,7 +109,11 @@ proc main() {
             
         }
     }
+
+    timer.stop();
+
     var (minVal, minLoc) = minloc reduce zip(minArray, minArray.domain);
+    writeln("time:\t\t\t", timer.elapsed(), " s");
     writeln("global best path:\t", minPathArray[minLoc]);
     writeln("global min distance:\t", minVal);
 }
