@@ -9,11 +9,7 @@ config const N = 280;
 config const file = "data/a280.tsp"; 
 config const split = 1;
 const MAX_INTEGER = 999999999;
-
 var timer: Timer;
-// var localMin: real = 99999999999;
-// var localMinPath: list(int);
-// here.maxTaskPar;
 
 proc random(min: int, max: int): int{
     var rands: [1..1] real;
@@ -45,7 +41,6 @@ proc tsplib_reader(path: string, n: int) : []real {
     forall (i, j) in adj.domain {
         if (i != j) {
             adj(i, j) = euclidean_distance(nodes(i), nodes(j));
-            // writeln(adj(i, j));
         }
     }    
     return adj;
@@ -62,7 +57,6 @@ proc tree_branch(in distance: real, adj: []real, in path , inout localMin: real,
         }
         return;
     }  
-
     for i in 1..N {
         if (path.contains(i)) {
             continue;
@@ -74,43 +68,32 @@ proc tree_branch(in distance: real, adj: []real, in path , inout localMin: real,
             tree_branch(newDistance, adj, path, localMin, localMinPath);
             path.pop();
         } 
-        // else{
-        //     writeln("Branch terminated.");
-        // }
     }
 }
 
 proc main() {
 
+    // READ TSPLIB DATA
     var adj = tsplib_reader(file, N);
-    // var adj: [1..N, 1..N] real;
-    // adj(1,2) = 35;adj(2,1) = 35;adj(1,3) = 25;adj(3,1) = 25;adj(1,4) = 10;adj(4,1) = 10;adj(2,3) = 30;adj(3,2) = 30;
-    // adj(2,4) = 15;adj(4,2) = 15;adj(3,4) = 20;adj(4,3) = 20;
-    var root: int;
-    if initRoot == -1 {
-        root = random(1,N);
-    } else {
-        root = initRoot;
-    }
-    writeln("root node:\t\t", root);
 
     // INIT VARIABLES
+    var root =  if initRoot == -1 then random(1,N) else initRoot;
     var minArray: [1..N] real;
     var minPathArray: [1..N] list(int);
     minArray[root] = MAX_INTEGER;
     var localMin: real = MAX_INTEGER;
     var path, localMinPath: list(int);
+    var ranges: [1..#split] list(int);
     path.append(root);
 
     // INIT RANGES ARRAY
-    var ranges: [1..#split] list(int);
     var i = 0;
     for branch in 1..N do {
-        if branch == root {
-            continue;
-        }
+        if branch == root { continue;}
         ranges[branch % split + 1].append(branch);
     } 
+
+    writeln("root node:\t\t", root);
     writeln("ranges array:\t", ranges);
 
     timer.start();
@@ -119,19 +102,14 @@ proc main() {
         for node in ranges[process] {
             var distance = adj(root, node): real;
             path.append(node);
-            // writeln(node, " path: ", path);
             tree_branch(distance, adj, path, localMin, localMinPath);
-            // writeln(node, " branch. Local min: ", localMin);
             minArray[node] = localMin;
             minPathArray[node] = localMinPath;
             path.pop();
         }
-        
         writeln(process, " process exited. Local min of the process: ", localMin);
     }
     
-    
-
     timer.stop();
 
     var (minVal, minLoc) = minloc reduce zip(minArray, minArray.domain);

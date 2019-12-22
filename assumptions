@@ -1,8 +1,0 @@
- branch and bound alg
- 
--między procki będziemy dzielić ścieżki; trzeba je dobrać odpowiednio
-- ustalamy sobie poziom, od którego nie dzielimy juz na taski, tylko każdy branch per proces będziemy
-- bardziej opłaca się podzielić te drzewa na mniejsze, żeby zadań było wiecej niż coreów, wrzucać do jednego cora wiecej poddrzew, żeby średnio było git i load balancing i te sprawy
-
--zrobić coforallem, wrzucić mniejsze poddrzewa niż mamy corów, i atomiciem odczytywać wartość lokalnego minimum
--zbadać jaka ilosc poddrzew jest optymalna

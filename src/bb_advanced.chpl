@@ -2,14 +2,25 @@ use Time;
 use IO;
 use Math;
 use List;
+use Random;
 
+config const initRoot = -1;
+config const N = 280; 
+config const file = "data/a280.tsp"; 
+config const split = 1;
+const MAX_INTEGER = 999999999;
 
-// config const N = 280; 
-config const N = 4; 
-config const TASKS = 3;
-var globalMin: real = 99999999999;
-var globalMinPath: list(int);
-// here.maxTaskPar;
+var globalMin: atomic real;
+var globalMinPathLoc: atomic int;
+var timer: Timer;
+
+proc random(min: int, max: int): int{
+    var rands: [1..1] real;
+    fillRandom(rands);
+    var rand = 1 + rands[1] * N;
+    var ret = rand: int;
+    return ret;
+}
 
 proc euclidean_distance((x1, y1): 2*int, (x2, y2): 2* int): real {
     var xDistance = abs(x1 - x2);
@@ -29,7 +40,6 @@ proc tsplib_reader(path: string, n: int) : []real {
         nodes(node) = (x, y);
     }
     file.close();
-
     forall (i, j) in adj.domain {
         if (i != j) {
             adj(i, j) = euclidean_distance(nodes(i), nodes(j));
@@ -39,103 +49,74 @@ proc tsplib_reader(path: string, n: int) : []real {
     return adj;
 }
 
-
-// var adj = tsplib_reader("data/a280.tsp", N);
-var adj: [1..N, 1..N] real;
-adj(1,2) = 35;
-adj(2,1) = 35;
-adj(1,3) = 25;
-adj(3,1) = 25;
-adj(1,4) = 10;
-adj(4,1) = 10;
-adj(2,3) = 30;
-adj(3,2) = 30;
-adj(2,4) = 15;
-adj(4,2) = 15;
-adj(3,4) = 20;
-adj(4,3) = 20;
-
-// proc branches(root: int, nodes: []int, adj: []real): []int {
-//     var visited: [1..N] bool;
-//     visited(root) = true;
-//     // var currentPath = List.init();
-//     var globalMin = 99999999999;
-//     // for i in nodes {
-
-//     // }
-
-// }
-
-// proc branch_rec(adj: []real, rootWeight: real, currWeight: real, level: int, currPath: [] int, visited: []bool) {
-
-//     if (level == N) {
-//         localMin = currWeight + adj(currPath[level - 1], currPath[0]);
-
-//         if (localMin < globalMin) {
-//             globalMin = localMin;
-//         }
-
-//         return localMin;
-//     }  
-
-//     for (i in 1..N) {
-//         if (visited(i) == false) {
-//             var temp = rootWeight;
-//             currWeight += adj(currPath[level - 1], i);   
-//         }
-
-//         if (currWeight < globalMin){
-//             currPath[level] = i;
-//             visited[i] = true;
-
-//             branch_rec(adj, rootWeight, currWeight, level + 1, currPath);
-//         }
-//     }
-// }
-
-
-proc tree_branch(in distance: real, adj: []real, in path ) {
+proc tree_branch(in distance: real, adj: []real, in path, inout minPath) {
 
     if (path.size == N) {
         distance += adj(path[path.size], path[1]);
-
-        
-
-        if (distance < globalMin) {
+        if (distance < globalMin.read()) {
             path.append(path[1]);
-            globalMin = distance;
-            globalMinPath = path;
+            globalMin.write(distance);
+            minPath = path;
+            globalMinPathLoc.write(path[2]);
         }
         return;
     }  
-
     for i in 1..N {
-        
         if (path.contains(i)) {
             continue;
         }
-        // writeln("level: ", level, " dist: ", distance, " path ", path);
         var newDistance = distance + adj(path[path.size], i);
 
-        if (newDistance < globalMin) {
+        if (newDistance < globalMin.read()) {
             path.append(i);
-
-            tree_branch(newDistance, adj, path);
+            tree_branch(newDistance, adj, path, minPath);
             path.pop();
         } 
     }
 }
 
+proc main() {
 
+    // READ TSPLIB DATA
+    var adj = tsplib_reader(file, N);
 
-var distance: real;
-// var level = 1;
-var path: list(int);
-path.append(4);
-path.append(2);
-distance = 15.0;
+    // INIT VARIABLES
+    var root =  if initRoot == -1 then random(1,N) else initRoot;
+    globalMin.write(MAX_INTEGER);
+    var newGlobalMin: bool;
+    var minArray: [1..N] real;
+    var minPathArray: [1..N] list(int);
+    var ranges: [1..#split] list(int);
+    minArray[root] = MAX_INTEGER;
+    var path, minPath: list(int);
+    path.append(root);
 
-tree_branch(distance, adj, path);
+    // INIT RANGES ARRAY
+    for branch in 1..N do {
+        if branch == root { continue; }
+        ranges[branch % split + 1].append(branch);
+    } 
 
-writeln("global best path:\t", globalMinPath);
-writeln("global min distance:\t", globalMin);
+    writeln("root node:\t\t", root);
+    writeln("ranges array:\t", ranges);
+
+    timer.start();
+    
+    coforall process in 1..split with (in path, in minPath, in newGlobalMin) do {
+        for node in ranges[process] {
+            var distance = adj(root, node): real;
+            path.append(node);
+            tree_branch(distance, adj, path, minPath);
+            minPathArray[node] = minPath;
+            path.pop();
+        }
+        writeln(process, " process exited.");
+    }
+
+    timer.stop();
+
+    writeln("Time:\t\t\t", timer.elapsed(), " s");
+    writeln("Global best path:\t", minPathArray[globalMinPathLoc.read()]);
+    writeln("Global min distance:\t", globalMin.read());
+}
+
