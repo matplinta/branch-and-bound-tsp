@@ -4,9 +4,11 @@ use Math;
 use List;
 use Random;
 
-// config const N = 280; 
+config const initRoot = -1;
 config const N = 280; 
 config const file = "data/a280.tsp"; 
+config const split = 1;
+const MAX_INTEGER = 999999999;
 
 var timer: Timer;
 // var localMin: real = 99999999999;
@@ -72,6 +74,9 @@ proc tree_branch(in distance: real, adj: []real, in path , inout localMin: real,
             tree_branch(newDistance, adj, path, localMin, localMinPath);
             path.pop();
         } 
+        // else{
+        //     writeln("Branch terminated.");
+        // }
     }
 }
 
@@ -81,34 +86,51 @@ proc main() {
     // var adj: [1..N, 1..N] real;
     // adj(1,2) = 35;adj(2,1) = 35;adj(1,3) = 25;adj(3,1) = 25;adj(1,4) = 10;adj(4,1) = 10;adj(2,3) = 30;adj(3,2) = 30;
     // adj(2,4) = 15;adj(4,2) = 15;adj(3,4) = 20;adj(4,3) = 20;
-
-    var root = random(1,N);
+    var root: int;
+    if initRoot == -1 {
+        root = random(1,N);
+    } else {
+        root = initRoot;
+    }
     writeln("root node:\t\t", root);
-    
+
+    // INIT VARIABLES
     var minArray: [1..N] real;
     var minPathArray: [1..N] list(int);
-    minArray[root] = 99999999999;
+    minArray[root] = MAX_INTEGER;
+    var localMin: real = MAX_INTEGER;
+    var path, localMinPath: list(int);
+    path.append(root);
+
+    // INIT RANGES ARRAY
+    var ranges: [1..#split] list(int);
+    var i = 0;
+    for branch in 1..N do {
+        if branch == root {
+            continue;
+        }
+        ranges[branch % split + 1].append(branch);
+    } 
+    writeln("ranges array:\t", ranges);
 
     timer.start();
     
-    coforall node in 1..N {
-        if node != root {
-            var path: list(int);
+    coforall process in 1..split with (in path, in localMin, in localMinPath) do {
+        for node in ranges[process] {
             var distance = adj(root, node): real;
-
-            path.append(root);
             path.append(node);
-
-            var localMin: real = 99999999999;
-            var localMinPath: list(int);
-
+            // writeln(node, " path: ", path);
             tree_branch(distance, adj, path, localMin, localMinPath);
-
+            // writeln(node, " branch. Local min: ", localMin);
             minArray[node] = localMin;
             minPathArray[node] = localMinPath;
-            
+            path.pop();
         }
+        
+        writeln(process, " process exited. Local min of the process: ", localMin);
     }
+    
+    
 
     timer.stop();
 
