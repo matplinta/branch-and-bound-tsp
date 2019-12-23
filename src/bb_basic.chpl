@@ -93,8 +93,7 @@ proc main() {
         ranges[branch % split + 1].append(branch);
     } 
 
-    writeln("root node:\t\t", root);
-    writeln("ranges array:\t", ranges);
+    writeln("INF: ranges array:\t", ranges);
 
     timer.start();
     
@@ -107,14 +106,13 @@ proc main() {
             minPathArray[node] = localMinPath;
             path.pop();
         }
-        writeln(process, " process exited. Local min of the process: ", localMin);
+        writeln("INF: ", process, " process exited. Local min of the process: ", localMin);
     }
     
     timer.stop();
 
     var (minVal, minLoc) = minloc reduce zip(minArray, minArray.domain);
-    writeln("time:\t\t\t", timer.elapsed(), " s");
-    writeln("global best path:\t", minPathArray[minLoc]);
-    writeln("global min distance:\t", minVal);
+    writeln("INF: Global best path:\t", minPathArray[minLoc]);
+    writeln(root, ",", minVal, ",", timer.elapsed());
 }
 
