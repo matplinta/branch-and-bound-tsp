@@ -19,33 +19,18 @@
  
 module load plgrid/tools/chapel/1.20.0
 export  GASNET_PHYSMEM_MAX='128MB'
+export CHPL_RT_NUM_THREADS_PER_LOCALE=12
 
 ## go to execution dir
 cd $SLURM_SUBMIT_DIR
 
-chpl -o bin/basic ../src/bb_basic.chpl
+chpl -o bin/basic src/bb_basic.chpl
 
-echo "method,iterations,problem,locales,tasks,tasksPerLocale,time"
+echo "root,shortest,time"
 
-for n_cores in {1..12}
+for procs in 2 4 6 8 10 12
 do
-    export CHPL_RT_NUM_THREADS_PER_LOCALE=$n_cores
-    ./jacobi_shared -nl 1 --n=100
-    ./gauss_shared -nl 1 --n=100
-done
-
-for n_cores in {1..12}
-do
-    export CHPL_RT_NUM_THREADS_PER_LOCALE=$n_cores
-    ./jacobi_shared -nl 1 --n=150
-    ./gauss_shared -nl 1 --n=150
-done
-
-for n_cores in {1..12}
-do
-    export CHPL_RT_NUM_THREADS_PER_LOCALE=$n_cores
-    ./jacobi_shared -nl 1 --n=200
-    ./gauss_shared -nl 1 --n=200
+    bin/basic -nl 1 --file data/a280.tsp --N 13 --initRoot 1 --split $procs
 done
 
 
