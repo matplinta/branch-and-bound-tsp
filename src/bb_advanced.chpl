@@ -115,6 +115,6 @@ proc main() {
     timer.stop();
 
     // writeln("INF: Global best path:\t", minPathArray[globalMinPathLoc.read()]);
-    writeln(root, ",", split, ",", globalMin.read(), ",", timer.elapsed());
+    writeln(root, ",", split, ",", here.maxTaskPar, ",", globalMin.read(), ",", timer.elapsed());
 }
 

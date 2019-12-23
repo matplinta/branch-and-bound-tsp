@@ -8,7 +8,7 @@
 ## Ilość pamięci przypadającej na jeden rdzeń obliczeniowy (domyślnie 4GB na rdzeń)
 #SBATCH --mem-per-cpu=1GB
 ## Maksymalny czas trwania zlecenia (format HH:MM:SS)
-#SBATCH --time=3:0:0 
+#SBATCH --time=4:0:0 
 ## Specyfikacja partycji
 #SBATCH -p plgrid
 #SBATCH -A chapelresearchzeus
@@ -19,18 +19,22 @@
  
 module load plgrid/tools/chapel/1.20.0
 export  GASNET_PHYSMEM_MAX='128MB'
-export CHPL_RT_NUM_THREADS_PER_LOCALE=12
 
 ## go to execution dir
 cd $SLURM_SUBMIT_DIR
 
 chpl -o bin/basic src/bb_basic.chpl
 
-echo "root,shortest,time"
+echo "root,split,maxTaskPar,shortest,time"
 
-for procs in 2 4 6 8 10 12
+
+
+for n_cores in {1..12}
 do
-    bin/basic -nl 1 --file data/a280.tsp --N 13 --initRoot 1 --split $procs
+    export CHPL_RT_NUM_THREADS_PER_LOCALE=$n_cores
+    for procs in 4 10
+    do
+        bin/basic -nl 1 --file data/a280.tsp --N 13 --initRoot 1 --split $procs
+    done
 done
-
 

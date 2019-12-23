@@ -113,6 +113,6 @@ proc main() {
 
     var (minVal, minLoc) = minloc reduce zip(minArray, minArray.domain);
     // writeln("INF: Global best path:\t", minPathArray[minLoc]);
-    writeln(root, ",", split, ",", minVal, ",", timer.elapsed());
+    writeln(root, ",", split, ",", here.maxTaskPar, ",", minVal, ",", timer.elapsed());
 }
 
